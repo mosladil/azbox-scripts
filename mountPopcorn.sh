@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# NFS auto u/mounter for Popcorn Hour A-110
+# Auto u/mounter for Popcorn Hour A-110
 #
 # Checks availability of NAS share
 # and remaps remote to local directories.
@@ -9,9 +9,16 @@
 # Recording support requires an USB flashcard.
 #
 # Miroslav Osladil <xxlmira@gmail.com>
- 
+
+# Use CIFS or NFS protocol
+USE=NFS
+
+# Defaults
 NAS_IP=10.0.0.102
-NAS_SHARE=/opt/sybhttpd/localhost.drives/HARD_DISK
+NAS_NFS=/opt/sybhttpd/localhost.drives/HARD_DISK
+NAS_CIFS=share
+NAS_USER=nmt
+NAS_PASS=1234
 DATA=/DATA
 LOCK=/tmp/nas.lock
 BUFFER=8192
@@ -24,49 +31,61 @@ BUFFER=8192
 
 function lnShares()
 {
-	ln -s $MOUNT/Video $DATA/movie
-	ln -s $MOUNT/Music $DATA/music
-	ln -s $MOUNT/Photo $DATA/picture
+	ln -s $MOUNT/Video      $DATA/movie
+	ln -s $MOUNT/Music      $DATA/music
+	ln -s $MOUNT/Photo      $DATA/picture
+	ln -s $MOUNT/recordfile $DATA/recordfile
 }
 
 function mkShares()
 {
-	[ -x $DATA/movie ]   || mkdir $DATA/movie
-	[ -x $DATA/music ]   || mkdir $DATA/music
-	[ -x $DATA/picture ] || mkdir $DATA/picture
+	[ -x $DATA/movie ]      || mkdir $DATA/movie
+	[ -x $DATA/music ]      || mkdir $DATA/music
+	[ -x $DATA/picture ]    || mkdir $DATA/picture
+	[ -x $DATA/recordfile ] || mkdir $DATA/recordfile
 }
 
 function rmShares()
 {
-	rm -rf $DATA/movie   2>/dev/null >/dev/null
-	rm -rf $DATA/music   2>/dev/null >/dev/null
-	rm -rf $DATA/picture 2>/dev/null >/dev/null
+	rm -rf $DATA/movie      2>/dev/null >/dev/null
+	rm -rf $DATA/music      2>/dev/null >/dev/null
+	rm -rf $DATA/picture    2>/dev/null >/dev/null
+	rm -rf $DATA/recordfile 2>/dev/null >/dev/null
 }
 
 ping -c 1 $NAS_IP 2>/dev/null >/dev/null
-RETVAL_NAS=$?
+RETVAL_PING=$?
 
 mount | grep $NAS_IP 2>/dev/null >/dev/null
 RETVAL_MOUNT=$?
 
-if [ $RETVAL_NAS == 0 ]
+if [ $RETVAL_PING == 0 ]
 then
+	echo -n 'NAS available... '
 	if ! [ $RETVAL_MOUNT == 0 ]
 	then
-		echo NAS available, re-mounting...
-		mount -t nfs -o nolock,rsize=$BUFFER,wsize=$BUFFER $NAS_IP:$NAS_SHARE $MOUNT
+		echo -n 're-mounting... '
 		rmShares
 		lnShares
+		if [ $USE == 'NFS' ]
+		then
+			mount -t nfs -o nolock,rsize=$BUFFER,wsize=$BUFFER $NAS_IP:$NAS_NFS $MOUNT
+		else
+			mount.cifs //$NAS_IP/$NAS_SMB $MOUNT -o username=$NAS_SMB_USER,password=$NAS_SMB_PASS
+		fi
 	fi
 else
+	echo -n 'NAS unavailable...'
 	if [ $RETVAL_MOUNT == 0 ]
 	then
-		echo NAS unavailable, force umounting...
+		echo -n 'umounting...'
 		umount -f $MOUNT
 		rmShares
 		mkShares
 	fi
 fi
+
+echo done.
 
 rm $LOCK
 
