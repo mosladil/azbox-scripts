@@ -71,7 +71,7 @@ then
 		then
 			mount -t nfs -o nolock,rsize=$BUFFER,wsize=$BUFFER $NAS_IP:$NAS_NFS $MOUNT
 		else
-			mount.cifs //$NAS_IP/$NAS_CIFS $MOUNT -o username=$NAS_USER,password=$NAS_PASS
+			mount.cifs //$NAS_IP/$NAS_CIFS $MOUNT -o username=$NAS_USER,password=$NAS_PASS,nolock,rsize=$BUFFER,wsize=$BUFFER
 		fi
 	fi
 else
