@@ -53,6 +53,11 @@ function rmShares()
 	rm -rf $DATA/recordfile 2>/dev/null >/dev/null
 }
 
+function setDisplay()
+{
+	vfd_display -td210 "$1" 2>/dev/null >/dev/null
+}
+
 ping -c 1 $NAS_IP 2>/dev/null >/dev/null
 RETVAL_PING=$?
 
@@ -73,6 +78,7 @@ then
 		else
 			mount.cifs //$NAS_IP/$NAS_CIFS $MOUNT -o username=$NAS_USER,password=$NAS_PASS,nolock,rsize=$BUFFER,wsize=$BUFFER
 		fi
+		setDisplay 'NAS ready'
 	fi
 else
 	echo -n 'NAS unavailable...'
