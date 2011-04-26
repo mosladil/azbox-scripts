@@ -78,7 +78,7 @@ then
 		else
 			mount.cifs //$NAS_IP/$NAS_CIFS $MOUNT -o username=$NAS_USER,password=$NAS_PASS,nolock,rsize=$BUFFER,wsize=$BUFFER
 		fi
-		setDisplay 'NAS ready'
+		[ $? == 0 ] && setDisplay 'NAS ready'
 	fi
 else
 	echo -n 'NAS unavailable...'
